@@ -7,12 +7,14 @@ public class PlayerController : MonoBehaviour
     public Transform bubbleSpawner;
     public Transform bubbleStartPos;
     public GameObject bubblePrefab;
+    public CameraMovement cameraMovement;
     public Blower blowerL;
     public Blower blowerR;
     // public Slider SL_BubbleInflation;
-    public List<GameObject> bubbles;
+    public GameObject activeBubble;
+    public float upwardsForce = 4f;
     bool isInflating = false;
-    public bool canBlowBubbles;
+    public bool canInflateBubbles;
     float bubbleScale;
     GameObject newBubble = null;
 
@@ -22,7 +24,8 @@ public class PlayerController : MonoBehaviour
         // SL_BubbleInflation.value = 0f;
         bubbleScale = 0f;
         bool isInflating = false;
-        canBlowBubbles = true;
+        canInflateBubbles = true;
+        activeBubble = null;
         
         blowerL.gameObject.SetActive(false);
         blowerR.gameObject.SetActive(false);
@@ -31,7 +34,7 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (canBlowBubbles)
+        if (canInflateBubbles)
         {
             if (Input.GetButtonDown("Inflate"))
             {
@@ -48,32 +51,47 @@ public class PlayerController : MonoBehaviour
                 {
                     newBubble.transform.position = bubbleStartPos.position;
                     // bubbles.Add(Instantiate(newBubble, bubbleStartPos.position, Quaternion.identity).GetComponent<Bubble>());
-                    // bubbles.Add(newBubble);
-                    canBlowBubbles = false;
+                    activeBubble = newBubble;
+                    canInflateBubbles = false;
+                    cameraMovement.SetCameraTarget(activeBubble.transform);
                 }
             }
-        }
-        
+        } 
         
         if (Input.GetButtonDown("BlowLeft"))
         {
             blowerL.gameObject.SetActive(true);
             // TODO: deduct air capacity
         }
-        // else if (Input.GetButtonUp("BlowLeft"))
-        // {
-        //     blowerL.gameObject.SetActive(false);
-        // }
+        else if (Input.GetButtonUp("BlowLeft"))
+        {
+            blowerL.gameObject.SetActive(false);
+            Debug.Log("LEFT-BLOW with force " + blowerL.blowForce);
+            if (activeBubble != null)
+                BlowBubbleTowards(Vector2.right, blowerL.blowForce);
+        }
 
         if (Input.GetButtonDown("BlowRight"))
         {
             blowerR.gameObject.SetActive(true);
             // TODO: deduct air capacity
         }
-        // else if (Input.GetButtonUp("BlowRight"))
-        // {
-        //     blowerR.gameObject.SetActive(false);
-        // }
+        else if (Input.GetButtonUp("BlowRight"))
+        {
+            blowerR.gameObject.SetActive(false);
+            Debug.Log("RIGHT-BLOW with force " + blowerR.blowForce);
+            if (activeBubble != null)
+                BlowBubbleTowards(Vector2.left, blowerR.blowForce);
+        }
+
+        if (activeBubble != null)
+        {
+            if (Input.GetButtonDown("BlowUpwards"))
+            {
+                BlowBubbleTowards(Vector2.up, upwardsForce);
+
+            }
+        }
 
         if (isInflating)
             bubbleScale += Time.deltaTime * 2f;
@@ -90,5 +108,11 @@ public class PlayerController : MonoBehaviour
             Debug.Log("POP!!!");
             bubbleScale = 0f;
         }
+    }
+
+    private void BlowBubbleTowards(Vector2 direction, float blowForce)
+    {
+        activeBubble.GetComponent<Rigidbody2D>().AddForce(direction * blowForce);
+        activeBubble.GetComponent<Bubble>().ReduceBubbleHealth(10f);
     }
 }
