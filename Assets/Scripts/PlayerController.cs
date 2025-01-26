@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
@@ -17,12 +17,15 @@ public class PlayerController : MonoBehaviour
     public bool canInflateBubbles;
     float bubbleScale;
     GameObject newBubble = null;
-
+    [Range(4,16)]
+    public int maxBubbles;
+    int bubblesBlown = 0;
 
     void Start()
     {
         // SL_BubbleInflation.value = 0f;
         bubbleScale = 0f;
+        bubblesBlown = 0;
         bool isInflating = false;
         canInflateBubbles = true;
         activeBubble = null;
@@ -42,6 +45,8 @@ public class PlayerController : MonoBehaviour
                 // SL_BubbleInflation.value += Time.deltaTime;
                 newBubble = Instantiate(bubblePrefab, bubbleSpawner);
                 newBubble.transform.localScale = Vector3.zero;
+                bubblesBlown++;
+
             }
             else if (Input.GetButtonUp("Inflate"))
             {
@@ -49,11 +54,13 @@ public class PlayerController : MonoBehaviour
                 // SL_BubbleInflation.value -= 0.05f * Time.deltaTime;
                 if (newBubble != null)
                 {
+                    newBubble.transform.SetParent(null);
                     newBubble.transform.position = bubbleStartPos.position;
                     // bubbles.Add(Instantiate(newBubble, bubbleStartPos.position, Quaternion.identity).GetComponent<Bubble>());
                     activeBubble = newBubble;
                     canInflateBubbles = false;
                     cameraMovement.SetCameraTarget(activeBubble.transform);
+                    GetComponent<SpriteRenderer>().color = new Color(1,1,1,0);
                 }
             }
         } 
@@ -89,8 +96,23 @@ public class PlayerController : MonoBehaviour
             if (Input.GetButtonDown("BlowUpwards"))
             {
                 BlowBubbleTowards(Vector2.up, upwardsForce);
-
             }
+        }
+        else 
+        {
+            canInflateBubbles = true;
+            cameraMovement.SetCameraTarget(transform);
+            GetComponent<SpriteRenderer>().color = new Color(1,1,1,1);
+            // if (bubblesBlown >= maxBubbles)
+            // {
+                
+            // }
+            // else
+            // {
+            //     canInflateBubbles = false;
+            //     bubblesBlown = 0;
+            //     canInflateBubbles = true;
+            // }
         }
 
         if (isInflating)
@@ -104,8 +126,7 @@ public class PlayerController : MonoBehaviour
 
         if (bubbleScale >= 2f)
         {
-            Destroy(newBubble);
-            Debug.Log("POP!!!");
+            newBubble.GetComponent<Bubble>().PopBubble();
             bubbleScale = 0f;
         }
     }
@@ -113,6 +134,6 @@ public class PlayerController : MonoBehaviour
     private void BlowBubbleTowards(Vector2 direction, float blowForce)
     {
         activeBubble.GetComponent<Rigidbody2D>().AddForce(direction * blowForce);
-        activeBubble.GetComponent<Bubble>().ReduceBubbleHealth(10f);
+        activeBubble.GetComponent<Bubble>().ReduceBubbleHealth(blowForce);
     }
 }

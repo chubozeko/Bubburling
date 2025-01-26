@@ -1,9 +1,11 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Bubble : MonoBehaviour
 {
     [SerializeField] private float bubbleStrength = 100f;
-    SpriteRenderer sr;
+    private SpriteRenderer sr;
+    private Vector3 bubblePopPosition;
     void Start()
     {
         sr = GetComponent<SpriteRenderer>();
@@ -17,15 +19,31 @@ public class Bubble : MonoBehaviour
 
         if (bubbleStrength <= 0f)
         {
-            Debug.Log("BUBBLE POPPED!");
-            Destroy(gameObject);
+            PopBubble();
         }
 
-        sr.color = new Color(1,1,1, (bubbleStrength*2)/100);
+        sr.color = new Color(1,1,1, bubbleStrength/100);
     }
 
     public void ReduceBubbleHealth(float amount)
     {
         bubbleStrength -= amount;
+    }
+
+    public void PopBubble()
+    {
+        Debug.Log("BUBBLE POPPED!");
+        // TODO: play bubble pop sound
+        FindObjectsByType<BubbleTracker>(FindObjectsSortMode.None)[0]
+            .RecordPoppedBubble(transform);
+        Destroy(gameObject);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.collider.tag == "Borders")
+        {
+            PopBubble();
+        }
     }
 }
